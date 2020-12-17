@@ -1,0 +1,13 @@
+name = "gigaword_64k"
+uuid = "ebf72ba7-64a8-4b7d-851f-8c14290fd70c"
+authors = ["ymh <hanyongming@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
