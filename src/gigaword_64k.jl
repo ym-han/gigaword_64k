@@ -4,46 +4,56 @@ using Revise, Underscores
 using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
-using Transducers
-import EzXML
+#using JLD
 
+# /users/yh31/scratch/projects/gigaword_64k
 
-# /users/yh31/scratch/datasets/entity_linking/raw_data
+# /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data
+
 
 # ok i shouldn't be lazy; i should make a proper env coz i'll need it to parallelize the thing
 
+# 8/5 * 4.9 * 1000 
+# ok it'll probably take one computer ~130h just to process about 5gb of data / the afp_eng dir
 
-# function text(cur_doc::HTMLDocument)
-#     string_parts = []
+# [yh31@node1323 data]$ du -shc ./*                          
+# 4.9G    ./afp_eng
+# 7.8G    ./apw_eng
+# 263M    ./cna_eng
+# 1.7G    ./ltw_eng
+# 8.8G    ./nyt_eng
+# 112M    ./wpb_eng
+# 2.5G    ./xin_eng
+# 26G     total
 
-#     for elt in PreOrderDFS(aaa.root) 
-#         isa(elt, HTMLText) || continue
-#         push!(string_parts, Gumbo.text(elt))
-#     end
+# there's about 12 files per year in afp_eng
 
-#     return join(string_parts, " ")
-# end
 
 
 #==========
 # CONSTANTS
 #========== 
 
-const f_mtdoc = 
 
-const f_onedoc = "/Users/ymh/Documents/Git_repos/NLP/sr_neural/data/test_data/giga_related/afp/one_doc"
-const f_twodocs = "/Users/ymh/Documents/Git_repos/NLP/sr_neural/data/test_data/giga_related/afp/two_docs"
+const path_afp_dir = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/afp_eng"
 
+
+# for testing
+const path_mtdoc_with_text_tags = "../test/test_data/afp/empty_doc_with_empty_text"
+const path_empty_file = "../test/test_data/afp/empty_file"
+const path_onedoc = "../test/test_data/afp/empty_doc_with_empty_text/one_doc"
+const path_twodocs = "../test/test_data/afp/two_docs"
+
+const path_big_file = "../test/test_data/afp/afp_eng_200304"
 
 
 # =====
 # UTILS
 # =====
 
-
 showall(x) = show(stdout, "text/plain", x) 
 
-is_wanted(s::String) = a prev version: length(s) >= 3 || all(isletter.(collect(s)))
+is_wanted(s::String) = length(s) >= 5 || all(isletter.(collect(s)))
 # I'm tempted right now to not filter out numbers, punctuation etc when going through the individual files. 
 # Just get the most common for the WHOLE gigaword corpus, and see how many of them actually are punctuation etc
 # And only filter out punctuation out at _that_ stage
@@ -51,6 +61,8 @@ is_wanted(s::String) = a prev version: length(s) >= 3 || all(isletter.(collect(s
 # naive implementation of most common things
 most_common(c::Accumulator) = most_common(c, length(c))
 most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k] 
+# TO DO: might be fun to code up a better version
+
 
 # ===============
 # TESTS FOR UTILS
@@ -78,42 +90,21 @@ end
 
 
 
-"""
-Returns counter consisting of words from file.
-"""
-function count_words_from_file(f :: String)
 
 
-end
+# doc = parsehtml(read(f_bigger, String))
 
-# TO DO: Make a few een simpler examples of these SGML files...
+# typeof(doc)
+# top_k =  most_common(doc_counter)[1:500]
+# showall(top_k)
 
-
-# draft case
-f_onedoc = "/Users/ymh/Documents/Git_repos/NLP/sr_neural/data/test_data/giga_related/afp/one_doc"
-doc = parsehtml(read(f_onedoc, String))
-doc.root
-
-
-
-
-
-
-f_bigger = "/Users/ymh/Documents/Git_repos/NLP/sr_neural/data/test_data/giga_related/afp/afp_eng_200304"
-doc = parsehtml(read(f_bigger, String))
-
-typeof(doc)
-top_k =  most_common(doc_counter)[1:500]
-showall(top_k)
-
-
-showall(doc_counter)
+#showall(doc_counter)
 
 
 """
 Tokenizes doc and returns word counts for all words ∈ doc
 """
-function counter_from_doc(doc :: HTMLDocument)
+function count_words_from_file(doc :: HTMLDocument)
     doc_counter = counter(String)
 
     "Helper function"
@@ -137,17 +128,32 @@ function counter_from_doc(doc :: HTMLDocument)
 end
 
 
+#/users/yh31/scratch/projects/gigaword_64k
+data_tree = FileTree(path_afp_dir)
+
+
+
+
 # ===================
 # TESTS FOR MAIN FTNS
 # ===================
 
 
-# for counter_from_doc
+# for count_words_from_file
+@testset "count_words_from_file: empty docs" begin
+    empty_f = parsehtml(read(path_empty_file, String))
+    @test count_words_from_file(empty_f) == counter(String)
+    @test_throws BoundsError most_common(count_words_from_file(empty_f), 1) 
 
-# TO DO make test for empty doc....
-@testset "counter_from_doc: simple" begin
-    doc = parsehtml(read(f_onedoc, String))
-    top_8 = most_common(counter_from_doc(doc), 8) 
+    empty_f_with_txt_tags = parsehtml(read(path_mtdoc_with_text_tags, String))
+    @test count_words_from_file(empty_f_with_txt_tags) == counter(String)
+    @test_throws BoundsError most_common(count_words_from_file(empty_f_with_txt_tags), 1) 
+end
+
+
+@testset "count_words_from_file: simple" begin
+    doc = parsehtml(read(path_onedoc, String))
+    top_8 = most_common(count_words_from_file(doc), 8) 
     @test top_8 == [("trade" => 4),
                     (")" => 3), 
                     ("(" => 3),  
@@ -159,12 +165,14 @@ end
 end
 
 
+tc = count_words_from_file(doc)
+JLD.save("test_tc.jld", "tc", tc)
+
+
+# How long would it take for one computer to go throguh all of the files in, e.g., the afp directory?
 
 
 
-tc = counter_from_doc(doc)
-most_common(tc, 8)
-most_common(tc, 3)[1]
 
 
 ## e.g.: /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/nyt_eng/nyt_eng_201012
@@ -182,17 +190,18 @@ most_common(tc, 3)[1]
 * EzXML won't work with SGML.
 * Transducers.jl didn't seem to be any faster than base foldl and filter, though that might change in the future
 
+using Transducers
 
 function test_no_transducer(doc)
     for elt in PreOrderDFS(doc.root) 
         if isa(elt, HTMLText)
 
-            #= 
+             
             1. tokenize the text
                 (note: each use of tokenize returns a 1-dim array of strings)
             2. filter out punctuation, numbers, etc
             3. increment counter accordingly
-            =#
+            
             @_ tokenize(elt.text) |>
             filter(is_wanted, __) |> 
             foldl((lst, str) -> inc!(doc_counter, str), __; init = []) 
