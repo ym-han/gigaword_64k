@@ -1,6 +1,6 @@
 #module gigaword_64k
 
-using Revise, Underscores
+using Underscores
 using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
