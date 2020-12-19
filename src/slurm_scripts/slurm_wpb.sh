@@ -2,9 +2,9 @@
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=yongming_han@brown.edu
-#SBATCH --job-name="afp_mapper"
-#SBATCH --output="afp_mapper.%j.%N.out"
-#SBATCH --error="afp_mapper.%j.err"
+#SBATCH --job-name="wpb_mapper"
+#SBATCH --output="wpb_mapper.%j.%N.out"
+#SBATCH --error="wpb_mapper.%j.err"
 #SBATCH -n 1
 #SBATCH --export=ALL
 #SBATCH -c 1
