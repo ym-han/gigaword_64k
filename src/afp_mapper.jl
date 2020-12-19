@@ -30,7 +30,7 @@ end
 # trying with the filetrees stuff in here...
 
 const path_output = path_intermed_afp
-const n_items = 4
+const n_items = 5
 
 data_tree = FileTree(path_afp_dir)
 
