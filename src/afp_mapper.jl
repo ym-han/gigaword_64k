@@ -6,18 +6,17 @@ catch
 end
 
 using ClusterManagers
+using Distributed
 
 addprocs_slurm(6, exeflags="--project=$(Base.active_project())")
-
-using Distributed
 
 @everywhere begin
     import Pkg; Pkg.instantiate()
 
-    using gigaword_64k
+    include("gigaword_64k.jl")
     
     const path_afp_dir = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/afp_eng"
-    const path_intermed_data = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga_topk"
+    const path_intermed_data = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga_topk/intermediate_files"
     const path_intermed_afp = joinpath(path_intermed_data, "afp")
     const path_intermed_cna = joinpath(path_intermed_data, "cna")
     const path_intermed_xin = joinpath(path_intermed_data, "xin")
@@ -28,4 +27,4 @@ end
 
 process_part_of_tree(path_afp_dir, path_intermed_afp, 4)
 
-# not sure if this will work, but no harm trying 
+# if this still doesn't work, next step is to try putting the filetrees stuff in here
