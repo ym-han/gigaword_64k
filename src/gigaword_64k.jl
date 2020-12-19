@@ -4,14 +4,13 @@ using Revise, Underscores
 using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
-#using JLD
+using JDF, DataFrames
+using IterTools, StatsBase
 
-# /users/yh31/scratch/projects/gigaword_64k
+# cd /users/yh31/scratch/projects/gigaword_64k
 
 # /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data
 
-
-# ok i shouldn't be lazy; i should make a proper env coz i'll need it to parallelize the thing
 
 # 8/5 * 4.9 * 1000 
 # ok it'll probably take one computer ~130h just to process about 5gb of data / the afp_eng dir
@@ -37,15 +36,20 @@ using AbstractTrees, Test
 
 const path_afp_dir = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/afp_eng"
 
-
 # for testing
-const path_mtdoc_with_text_tags = "../test/test_data/afp/empty_doc_with_empty_text"
-const path_empty_file = "../test/test_data/afp/empty_file"
-const path_onedoc = "../test/test_data/afp/empty_doc_with_empty_text/one_doc"
-const path_twodocs = "../test/test_data/afp/two_docs"
+const path_test_data = "/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data"
+const path_test_afp = joinpath(path_test_data ,"afp")
+const path_test_cna = joinpath(path_test_data ,"cna")
 
-const path_big_file = "../test/test_data/afp/afp_eng_200304"
 
+const path_mtdoc_with_text_tags = joinpath(path_test_data ,"afp/empty_doc_with_empty_text")
+const path_empty_file = joinpath(path_test_data, "afp/empty_file")
+const path_onedoc = joinpath(path_test_data, "afp/one_doc")
+const path_twodocs = joinpath(path_test_data, "afp/two_docs")
+
+const path_big_file = joinpath(path_test_data, "afp/afp_eng_200304")
+
+const path_test_output = "/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data/test_output"
 
 # =====
 # UTILS
@@ -53,52 +57,29 @@ const path_big_file = "../test/test_data/afp/afp_eng_200304"
 
 showall(x) = show(stdout, "text/plain", x) 
 
-is_wanted(s::String) = length(s) >= 5 || all(isletter.(collect(s)))
-# I'm tempted right now to not filter out numbers, punctuation etc when going through the individual files. 
-# Just get the most common for the WHOLE gigaword corpus, and see how many of them actually are punctuation etc
-# And only filter out punctuation out at _that_ stage
+is_wanted(s::String) = length(s) >= 7 || all(isletter.(collect(s)))
+# A reason to be more stringent here: would allow us to have smaller dictionaries!
+# imo it's OK to be stringent about how much to filter at this stage, because ultimately what we're doing is filtering out stuff from other copora based on what's in the exclusion list that were making. Being stringent here just means that we'd have a smaller exclusion list than we'd otherwise have. And we can always apply more filters later.
 
 # naive implementation of most common things
-most_common(c::Accumulator) = most_common(c, length(c))
-most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k] 
-# TO DO: might be fun to code up a better version
+#most_common(c::Accumulator) = most_common(c, length(c))
+#most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k] 
 
 
-# ===============
-# TESTS FOR UTILS
-# ===============
-@testset "is_wanted" begin
-    @test is_wanted("abc") == true
-    @test is_wanted("aBc") == true
 
-    # Filters out punctuation
-    @test is_wanted("!") == false
+# ==================================
+# MAIN functions (including helpers)
+# ==================================
 
-    # Filters out stuff that's just fancy numbers and not v long
-    @test is_wanted("3.77") == false
+"Returns a df that consists of pairs in `acc`"
+function df_from_acc(acc :: Accumulator)
+    df = DataFrame([String, Int], [:word, :freq])
 
-    # note
-    @test is_wanted("") == true # but won't usually happen
+    for pair in acc
+        push!(df, pair)
+    end
+    return df
 end
-
-
-
-
-
-# I: Figure out how to get the list of word tokens for each file, and then for each of the nyt_eng afp_eng etc directories
-
-
-
-
-
-
-# doc = parsehtml(read(f_bigger, String))
-
-# typeof(doc)
-# top_k =  most_common(doc_counter)[1:500]
-# showall(top_k)
-
-#showall(doc_counter)
 
 
 """
@@ -117,7 +98,7 @@ function count_words_from_file(doc :: HTMLDocument)
                 2. increment counter with lowercase repn of each word
                 =#
                 @_ tokenize(elt.text) |>
-                #filter(is_wanted, __) |> 
+                filter(is_wanted, __) |> 
                 foldl((lst, str) -> inc!(doc_counter, lowercase(str)), __; init = []) 
             end 
         end
@@ -127,66 +108,90 @@ function count_words_from_file(doc :: HTMLDocument)
     return doc_counter
 end
 
-
-#/users/yh31/scratch/projects/gigaword_64k
-data_tree = FileTree(path_afp_dir)
-
-
-
-
-# ===================
-# TESTS FOR MAIN FTNS
-# ===================
+"Composes file reading and count_words_from_file"
+read_and_wc(filepath::String) = @_ read(filepath, String) |> 
+                 parsehtml(__) |> 
+                 count_words_from_file(__)
 
 
-# for count_words_from_file
-@testset "count_words_from_file: empty docs" begin
-    empty_f = parsehtml(read(path_empty_file, String))
-    @test count_words_from_file(empty_f) == counter(String)
-    @test_throws BoundsError most_common(count_words_from_file(empty_f), 1) 
+"Returns year from filename in gigaword corpus"
+year_from_fnm(fnm :: String) = split(fnm, "_")[3][1:4]
 
-    empty_f_with_txt_tags = parsehtml(read(path_mtdoc_with_text_tags, String))
-    @test count_words_from_file(empty_f_with_txt_tags) == counter(String)
-    @test_throws BoundsError most_common(count_words_from_file(empty_f_with_txt_tags), 1) 
+"Picks min(`k`, size of array) elements from array"
+pick_elts(arr, k :: Integer) = length(arr) <= k ? arr : sample(arr, k, replace=false) 
+
+"Given FileTree for dir, return FileTree with __only__ the files we want to sample from"
+function process_part_of_tree(path_of_tree :: String, path_output :: String, n_items :: Integer)
+    # `n_items` is number of items we want to get per year
+
+    data_tree = FileTree(path_of_tree)
+
+    # 1. Get the list of names of files in tree
+    filenames = name.(files(data_tree))
+    
+    # 2. For each year that's represented, randomly choose min(array_size, n_items) of the files in that year
+
+    pick_elts_from_arr(arr) = pick_elts(arr, n_items)
+
+    chosen_files = @_ filenames |> 
+            collect(IterTools.groupby(year_from_fnm, __)) |> 
+            map(pick_elts_from_arr, __) |> 
+            vcat(__...) |> Set(__)
+
+    # 3. Get the resulting tree with `filter`
+    filtered_tree = filter(x->x.name ∈ chosen_files, data_tree, dirs=false)
+
+    # 4. load it; count words; save it
+    loaded_tree = FileTrees.load(filtered_tree; lazy = true) do file
+        @_ file |>
+        string(FileTrees.path(__)) |> 
+        read_and_wc(__)
+    end
+
+    out_tree = FileTrees.rename(loaded_tree, path_output)
+
+    FileTrees.save(out_tree) do acc
+        acc_df = @_ acc |> FileTrees.get(__) |> df_from_acc(__)
+        savejdf(string(FileTrees.path(acc)) * ".jdf", acc_df)
+    end
 end
 
 
-@testset "count_words_from_file: simple" begin
-    doc = parsehtml(read(path_onedoc, String))
-    top_8 = most_common(count_words_from_file(doc), 8) 
-    @test top_8 == [("trade" => 4),
-                    (")" => 3), 
-                    ("(" => 3),  
-                    ("and" => 2),
-                    ("on" => 2),
-                    ("japan" => 2),
-                    ("the" => 2),
-                    ("organization" => 1)]
+
+
+
+
+# testing with mt-ish files
+#=
+tree_of_mts = FileTrees.load(data_tree[glob"empty*"]; lazy = true) do file
+    @_ file |> 
+    string(FileTrees.path(__)) |> 
+    read(__, String) |> 
+    parsehtml(__) |> 
+    count_words_from_file(__)
 end
-
-
-tc = count_words_from_file(doc)
-JLD.save("test_tc.jld", "tc", tc)
-
-
-# How long would it take for one computer to go throguh all of the files in, e.g., the afp directory?
-
-
-
-
-
-## e.g.: /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/nyt_eng/nyt_eng_201012
-
-## 2. figure out how best to get text from there
-
-## 3. tokenize the text; don't add if punctuation
-
-## II. do the map reduce thing with filetrees.jl
-
-## 
+=#
 
 
 #= Notes for future 
+
+# ReFileTrees.jl
+
+## Not sure quid difference between `filtered_tree` and `data_tree[filtered_tree]`
+typeof(filtered_tree) # FileTree
+typeof(data_tree[filtered_tree]) # FileTree
+
+filtered_tree == data_tree[filtered_tree]
+# false, hmm, not sure why
+files(filtered_tree) == files(data_tree[filtered_tree])
+# this is true
+
+# for testing
+filtered_filenames = name.(files(filtered_tree))
+Set(filtered_filenames) == chosen_files
+
+
+
 * EzXML won't work with SGML.
 * Transducers.jl didn't seem to be any faster than base foldl and filter, though that might change in the future
 
@@ -236,6 +241,7 @@ end
 
 
 =#
+
 
 
 end
