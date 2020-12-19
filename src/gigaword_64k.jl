@@ -29,9 +29,9 @@ using IterTools, StatsBase
 
 
 
-#==========
+# ==========
 # CONSTANTS
-#========== 
+# ========== 
 
 
 const path_afp_dir = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/afp_eng"
