@@ -63,8 +63,8 @@ is_wanted(s::String) = length(s) >= 7 || all(isletter.(collect(s)))
 # imo it's OK to be stringent about how much to filter at this stage, because ultimately what we're doing is filtering out stuff from other copora based on what's in the exclusion list that were making. Being stringent here just means that we'd have a smaller exclusion list than we'd otherwise have. And we can always apply more filters later.
 
 # naive implementation of most common things
-#most_common(c::Accumulator) = most_common(c, length(c))
-#most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k] 
+most_common(c::Accumulator) = most_common(c, length(c))
+most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k] 
 
 
 
