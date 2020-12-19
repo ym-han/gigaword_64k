@@ -5,7 +5,7 @@
 #SBATCH --job-name="afp_mapper"
 #SBATCH --output="afp_mapper.%j.%N.out"
 #SBATCH --error="afp_mapper.%j.err"
-#SBATCH -n 6
+#SBATCH -n 5
 #SBATCH --export=ALL
 #SBATCH -c 1
 #SBATCH -t 5:00:00 

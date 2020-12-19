@@ -8,7 +8,7 @@ end
 using ClusterManagers
 using Distributed
 
-addprocs_slurm(3, exeflags="--project=$(Base.active_project())")
+addprocs_slurm(4, exeflags="--project=$(Base.active_project())")
 
 @everywhere begin
     import Pkg; Pkg.instantiate()
@@ -19,16 +19,13 @@ addprocs_slurm(3, exeflags="--project=$(Base.active_project())")
     
     const path_intermed_data = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga_topk/intermediate_files"
     const path_intermed_afp = joinpath(path_intermed_data, "afp")
-    const path_intermed_cna = joinpath(path_intermed_data, "cna")
-    const path_intermed_xin = joinpath(path_intermed_data, "xin")
-    const path_intermed_nyt = joinpath(path_intermed_data, "nyt")
-
 end
 
-#process_part_of_tree(path_afp_dir, path_intermed_afp, 4)
+process_part_of_tree(path_afp_dir, path_intermed_afp, 4)
 
 # trying with the filetrees stuff in here...
 
+#=
 const path_output = path_intermed_afp
 const n_items = 5
 
@@ -55,7 +52,6 @@ loaded_tree = FileTrees.load(filtered_tree; lazy = true) do file
        @_ file |>
        string(FileTrees.path(__)) |> 
        read_and_wc(__) |>
-       FileTrees.get(__) |>
        df_from_acc(__)
    catch
        @warn "failed to load $(string(FileTrees.path(file)))"
@@ -71,3 +67,4 @@ FileTrees.save(out_tree) do acc_df
        @warn "failed to save $(string(FileTrees.path(acc_df)))"
    end
 end
+=#
