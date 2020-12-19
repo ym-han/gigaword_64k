@@ -1,3 +1,4 @@
+
 module gigaword_64k
 
 using Revise, Underscores
@@ -59,8 +60,8 @@ most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k]
 function df_from_acc(acc :: Accumulator)
     df = DataFrame([String, Int], [:word, :freq])
 
-    for pair in acc
-        push!(df, pair)
+    for (k, v) in acc
+        push!(df, (k, v))
     end
     return df
 end
