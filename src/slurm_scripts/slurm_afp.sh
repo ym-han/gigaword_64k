@@ -8,7 +8,7 @@
 #SBATCH -n 5
 #SBATCH --export=ALL
 #SBATCH -c 1
-#SBATCH -t 5:00:00 
+#SBATCH -t 7:00:00 
 #SBATCH --mem-per-cpu=12G
 #SBATCH --partition=batch
 
