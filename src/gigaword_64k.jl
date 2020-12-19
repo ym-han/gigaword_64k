@@ -8,7 +8,7 @@ using AbstractTrees, Test
 using JDF, DataFrames
 using IterTools, StatsBase
 
-export read_and_wc, process_part_of_tree
+#export read_and_wc, process_part_of_tree
 
 # cd /users/yh31/scratch/projects/gigaword_64k
 # /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data
@@ -105,6 +105,7 @@ year_from_fnm(fnm :: String) = split(fnm, "_")[3][1:4]
 "Picks min(`k`, size of array) elements from array"
 pick_elts(arr, k :: Integer) = length(arr) <= k ? arr : sample(arr, k, replace=false) 
 
+
 "Given FileTree for dir, return FileTree with __only__ the files we want to sample from"
 function process_part_of_tree(path_of_tree :: String, path_output :: String, n_items :: Integer)
     # `n_items` is number of items we want to get per year
@@ -149,7 +150,6 @@ function process_part_of_tree(path_of_tree :: String, path_output :: String, n_i
         end
     end
 end
-
 
 
 #end
