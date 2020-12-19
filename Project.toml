@@ -4,8 +4,23 @@ authors = ["ymh <hanyongming@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+ClusterManagers = "34f1f09b-3a8b-5176-ab39-66d58a4d544e"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+FileTrees = "72696420-646e-6120-6e77-6f6420746567"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+Gumbo = "708ec375-b3d6-5a57-a7ce-8257bf98657a"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+JDF = "babc3d20-cd49-4f60-a736-a8f9c08892d3"
 JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Underscores = "d9a01c3f-67ce-4d8c-9b55-35f6e4050bb1"
+WordTokenizers = "796a5d58-b03d-544a-977e-18100b691f6e"
 
 [compat]
 julia = "1"
