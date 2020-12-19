@@ -1,7 +1,7 @@
 
-module gigaword_64k
+#module gigaword_64k
 
-using Revise, Underscores
+using Underscores
 using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
@@ -128,22 +128,31 @@ function process_part_of_tree(path_of_tree :: String, path_output :: String, n_i
 
     # 4. load it; count words; save it
     loaded_tree = FileTrees.load(filtered_tree; lazy = true) do file
-        @_ file |>
-        string(FileTrees.path(__)) |> 
-        read_and_wc(__)
+        try
+            @_ file |>
+            string(FileTrees.path(__)) |> 
+            read_and_wc(__) |>
+            FileTrees.get(__) |>
+            df_from_acc(__)
+        catch
+            @warn "failed to load $(string(FileTrees.path(file)))"
+        end
     end
 
     out_tree = FileTrees.rename(loaded_tree, path_output)
 
-    FileTrees.save(out_tree) do acc
-        acc_df = @_ acc |> FileTrees.get(__) |> df_from_acc(__)
-        savejdf(string(FileTrees.path(acc)) * ".jdf", acc_df)
+    FileTrees.save(out_tree) do acc_df
+        try
+            savejdf(string(FileTrees.path(acc_df)) * ".jdf", acc_df)
+        catch
+            @warn "failed to save $(string(FileTrees.path(acc_df)))"
+        end
     end
 end
 
 
 
-end
+#end
 
 
 #= Notes for future 
