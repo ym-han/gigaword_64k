@@ -1,14 +1,15 @@
-#module gigaword_64k
+module gigaword_64k
 
-using Underscores
+using Revise, Underscores
 using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
 using JDF, DataFrames
 using IterTools, StatsBase
 
-# cd /users/yh31/scratch/projects/gigaword_64k
+export read_and_wc, process_part_of_tree
 
+# cd /users/yh31/scratch/projects/gigaword_64k
 # /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data
 
 
@@ -158,24 +159,12 @@ end
 
 
 
-
-
-
-# testing with mt-ish files
-#=
-tree_of_mts = FileTrees.load(data_tree[glob"empty*"]; lazy = true) do file
-    @_ file |> 
-    string(FileTrees.path(__)) |> 
-    read(__, String) |> 
-    parsehtml(__) |> 
-    count_words_from_file(__)
 end
-=#
 
 
 #= Notes for future 
 
-# ReFileTrees.jl
+# Re FileTrees.jl
 
 ## Not sure quid difference between `filtered_tree` and `data_tree[filtered_tree]`
 typeof(filtered_tree) # FileTree
@@ -236,12 +225,7 @@ end
 @time test_transducer(doc)
 # 200308: 9.11s!
 # 200304: 75.447160 seconds (211.13 M allocations: 13.748 GiB, 3.60% gc time)
-
-
-
-
 =#
 
 
 
-#end
