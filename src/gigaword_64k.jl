@@ -36,22 +36,6 @@ export read_and_wc, process_part_of_tree
 
 
 const path_afp_dir = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/afp_eng"
-
-# for testing
-const path_test_data = "/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data"
-const path_test_afp = joinpath(path_test_data ,"afp")
-const path_test_cna = joinpath(path_test_data ,"cna")
-
-
-const path_mtdoc_with_text_tags = joinpath(path_test_data ,"afp/empty_doc_with_empty_text")
-const path_empty_file = joinpath(path_test_data, "afp/empty_file")
-const path_onedoc = joinpath(path_test_data, "afp/one_doc")
-const path_twodocs = joinpath(path_test_data, "afp/two_docs")
-
-const path_big_file = joinpath(path_test_data, "afp/afp_eng_200304")
-
-const path_test_output = "/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data/test_output"
-
 # =====
 # UTILS
 # =====
