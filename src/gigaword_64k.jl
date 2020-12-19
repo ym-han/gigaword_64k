@@ -35,7 +35,6 @@ export read_and_wc, process_part_of_tree
 # ========== 
 
 
-const path_afp_dir = "/users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data/afp_eng"
 # =====
 # UTILS
 # =====
