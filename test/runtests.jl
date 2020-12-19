@@ -1,26 +1,25 @@
-using gigaword_64k, Gumbo, DataStructures
+# TO DO: revise in light of how gigaword no longer a module
+include(joinpath(@__DIR__, "../src/gigaword_64k.jl"))
 using Test
 
-using gigaword_64k: path_afp_dir
+const path_test_data = joinpath(@__DIR__, "test_data")
+const path_test_afp = joinpath(path_test_data,"afp")
+const path_test_cna = joinpath(path_test_data,"cna")
 
-const path_test_data = "/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data"
-const path_test_afp = joinpath(path_test_data ,"afp")
-const path_test_cna = joinpath(path_test_data ,"cna")
-
-const path_mtdoc_with_text_tags = joinpath(path_test_data ,"afp/empty_doc_with_empty_text")
+const path_mtdoc_with_text_tags = joinpath(path_test_data,"afp/empty_doc_with_empty_text")
 const path_empty_file = joinpath(path_test_data, "afp/empty_file")
 const path_onedoc = joinpath(path_test_data, "afp/one_doc")
 const path_twodocs = joinpath(path_test_data, "afp/two_docs")
 
 const path_big_file = joinpath(path_test_data, "afp/afp_eng_200304")
 
-const path_test_output = "/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data/test_output"
+const path_test_output = joinpath(path_test_data, "test_output")
 
 
 # ===============
 # TESTS FOR UTILS
 # ===============
-using gigaword_64k: is_wanted
+#using gigaword_64k: is_wanted
 
 @testset "is_wanted" begin
     @test is_wanted("abc") == true
@@ -40,16 +39,17 @@ end
 # ===================
 # TESTS FOR MAIN FTNS 
 # ===================
-using gigaword_64k: year_from_fnm
+#using gigaword_64k: year_from_fnm
 @test year_from_fnm("wpb_eng_201012") == "2010"
 
-using gigaword_64k: pick_elts
+#using gigaword_64k: pick_elts
 @test pick_elts([1,2], 3) == [1,2]
 @test pick_elts([1,2, 3], 3) == [1,2, 3]
 
 
 # for count_words_from_file
-using gigaword_64k: count_words_from_file, most_common
+
+#using gigaword_64k: count_words_from_file, most_common
 
 @testset "count_words_from_file: empty docs" begin
     empty_f = parsehtml(read(path_empty_file, String))
@@ -85,16 +85,62 @@ end
     jdf_cna_97_10 = @_ JDF.load(joinpath(path_tmp_test_output, 
         "cna_eng_199710.jdf")) |> DataFrame(__)
     acc_df_cna_97_10 = @_ read_and_wc(joinpath(path_test_cna, "cna_eng_199710")) |> df_from_acc(__)
+
     @test jdf_cna_97_10 == acc_df_cna_97_10 
 
 
     # to eyeball: case where there's more than 4 files per year
-    # path_manyfiles = joinpath(path_test_data, "manyfiles")
-    # process_part_of_tree(path_manyfiles, path_tmp_test_output, 4)
+    path_manyfiles = joinpath(path_test_data, "manyfiles")
+    process_part_of_tree(path_manyfiles, path_tmp_test_output, 4)
+    # note that this will delete everything that was in the tmp test output directory before outputting the stuff
+
+    many_files_dir = FileTree(path_tmp_test_output)
+    @test length(files(many_files_dir[glob"*.jdf"])) == 24
 
 
     rm(path_tmp_test_output, recursive=true, force=true)
 end
+
+
+#= 
+Note on that last test:
+
+julia> many_files_dir[glob"*.jdf"]
+/gpfs/scratch/yh31/projects/gigaword_64k/test/test_data/test_output/tmp/
+├─ cna_eng_200404.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+├─ cna_eng_200406.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+├─ cna_eng_200409.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+├─ cna_eng_200410.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+├─ cna_eng_200507.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+├─ cna_eng_200508.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+├─ cna_eng_200509.jdf/
+│  ├─ freq
+│  ├─ metadata.jls
+│  └─ word
+└─ cna_eng_200510.jdf/
+   ├─ freq
+   ├─ metadata.jls
+   └─ word
+=#
+
 
 #=
 jdf_cna_200403 = @_ JDF.load(joinpath(path_tmp_test_output, 
