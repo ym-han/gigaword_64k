@@ -7,8 +7,6 @@ using AbstractTrees, Test
 using JDF, DataFrames
 using IterTools, StatsBase
 
-export df_from_acc, count_words_from_file, 
-
 # cd /users/yh31/scratch/projects/gigaword_64k
 
 # /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data
