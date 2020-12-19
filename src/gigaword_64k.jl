@@ -1,4 +1,4 @@
-module gigaword_64k
+#module gigaword_64k
 
 using Revise, Underscores
 using FileTrees, Glob, DataStructures
@@ -6,6 +6,8 @@ using Gumbo, WordTokenizers
 using AbstractTrees, Test
 using JDF, DataFrames
 using IterTools, StatsBase
+
+export df_from_acc, count_words_from_file, 
 
 # cd /users/yh31/scratch/projects/gigaword_64k
 
@@ -244,4 +246,4 @@ end
 
 
 
-end
+#end
