@@ -128,26 +128,19 @@ function process_part_of_tree(path_of_tree :: String, path_output :: String, n_i
     filtered_tree = filter(x->x.name ∈ chosen_files, data_tree, dirs=false)
 
     # 4. load it; count words; save it
-    loaded_tree = FileTrees.load(filtered_tree; lazy = true) do file
-        try
-            @_ file |>
-            string(FileTrees.path(__)) |> 
-            read_and_wc(__) |>
-            FileTrees.get(__) |>
-            df_from_acc(__)
-        catch
-            @warn "failed to load $(string(FileTrees.path(file)))"
-        end
-    end
+    loaded_tree = FileTrees.load(filtered_tree; lazy = true) do file   
+                       @_ file |>
+                       string(FileTrees.path(__)) |> 
+                       read_and_wc(__) |>
+                       df_from_acc(__)
+                  end
 
     out_tree = FileTrees.rename(loaded_tree, path_output)
 
     FileTrees.save(out_tree) do acc_df
-        try
-            savejdf(string(FileTrees.path(acc_df)) * ".jdf", acc_df)
-        catch
-            @warn "failed to save $(string(FileTrees.path(acc_df)))"
-        end
+        savejdf(string(FileTrees.path(acc_df)) * ".jdf", FileTrees.get(acc_df))
+    #       @warn "failed to save $(string(FileTrees.path(acc_df)))"
+    #   end
     end
 end
 
