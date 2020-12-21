@@ -98,10 +98,10 @@ function count_words_from_file(doc :: HTMLDocument)
 end
 
 "Composes file reading and count_words_from_file"
-read_and_wc(filepath::String) = @_ read(filepath, String) |> 
-                 parsehtml(__) |> 
-                 count_words_from_file(__)
-
+read_and_wc(filepath::String) = read(filepath, String) |> 
+                 parsehtml |> 
+                 count_words_from_file
+# TO DO: might not need underscores.jl here!
 
 "Returns year from filename in gigaword corpus"
 year_from_fnm(fnm :: String) = split(fnm, "_")[3][1:4]
@@ -147,6 +147,21 @@ function process_part_of_tree(path_of_tree :: String, path_output :: String, n_i
     #   end
     end
 end
+
+
+
+counter_dfs = FileTree(path_of_tree)
+
+# trying to understand the tutorial...
+# http://shashi.biz/FileTrees.jl/tree-manipulation/
+testtree = maketree("dir"=>
+                [string(i)=>[(name=string(j), value=(i,j)) for j in 1:5] for i=1:5])
+
+vcated = mapsubtrees(testtree, glob"*") do subtree
+    reducevalues(vcat, subtree)
+end
+
+
 
 
 #end

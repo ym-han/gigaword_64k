@@ -115,8 +115,8 @@ end
     process_part_of_tree(path_test_cna, path_tmp_test_output, 4)
 
     jdf_cna_97_10 = @_ JDF.load(joinpath(path_tmp_test_output, 
-        "cna_eng_199710.jdf")) |> DataFrame(__)
-    acc_df_cna_97_10 = @_ read_and_wc(joinpath(path_test_cna, "cna_eng_199710")) |> df_from_acc(__)
+        "cna_eng_199710.jdf")) |> DataFrame
+    acc_df_cna_97_10 = read_and_wc(joinpath(path_test_cna, "cna_eng_199710")) |> df_from_acc
 
     @test jdf_cna_97_10 == acc_df_cna_97_10 
 
