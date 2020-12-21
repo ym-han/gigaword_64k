@@ -1,6 +1,6 @@
 # TO DO: revise in light of how gigaword no longer a module
 include(joinpath(@__DIR__, "../src/gigaword_64k.jl"))
-using Test
+using Test, Revise
 
 const path_test_data = joinpath(@__DIR__, "test_data")
 const path_test_afp = joinpath(path_test_data,"afp")
@@ -39,6 +39,38 @@ end
 # ===================
 # TESTS FOR MAIN FTNS 
 # ===================
+
+
+@testset "df_from_acc" begin
+    # empty case
+    mt_acc = counter(String)
+    df_from_mt_acc = df_from_acc(mt_acc)
+    @test size(df_from_mt_acc) == (0, 2)
+
+    # case with three entries
+    acc_t = counter(String)
+    acc_t["a"] = 1; acc_t["b"] = 2; acc_t["c"] = 7
+    df_at = df_from_acc(acc_t)
+
+    @test df_at[:word] == ["c", "b", "a"]
+    @test df_at[:freq] == [7, 2, 1]
+end
+
+@testset "acc_from_df" begin
+    mt_acc = counter(String)
+    df_from_mt_acc = df_from_acc(mt_acc)
+    @test acc_from_df(df_from_mt_acc) == mt_acc
+
+    # case with three entries
+    acc_t = counter(String)
+    acc_t["a"] = 1; acc_t["b"] = 2; acc_t["c"] = 7
+    df_at = df_from_acc(acc_t)
+
+    @test acc_from_df(df_at) == acc_t
+end
+
+
+
 #using gigaword_64k: year_from_fnm
 @test year_from_fnm("wpb_eng_201012") == "2010"
 
