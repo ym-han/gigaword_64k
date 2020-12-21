@@ -1,7 +1,7 @@
 
 #module gigaword_64k
 
-using Underscores
+using Revise, Underscores
 using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
@@ -12,10 +12,6 @@ using IterTools, StatsBase
 
 # cd /users/yh31/scratch/projects/gigaword_64k
 # /users/yh31/scratch/datasets/entity_linking/raw_data/gigaword/giga5/data
-
-
-# 8/5 * 4.9 * 1000 
-# ok it'll probably take one computer ~130h just to process about 5gb of data / the afp_eng dir
 
 # [yh31@node1323 data]$ du -shc ./*                          
 # 4.9G    ./afp_eng
@@ -64,6 +60,14 @@ function df_from_acc(acc :: Accumulator)
         push!(df, (k, v))
     end
     return df
+end
+
+"Converts a df (with same format as those produced by `df_from_acc`) to acc"
+function acc_from_df(df :: DataFrame)
+    acc = counter(String)
+    map(eachrow(df)) do row acc[row.word] = row.freq end
+
+    return acc
 end
 
 
