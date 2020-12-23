@@ -58,7 +58,7 @@ Returns list of dirs that are in `base` or any of its subdirectories
 function get_dir_paths(base::String, extension::String)
     dirlist = []
 
-    for (root, dirs, files) in walkdir(path_test_data_reds)
+    for (root, dirs, files) in walkdir(base)
         for dir in dirs
             if endswith(dir, "jdf")
                 push!(dirlist, joinpath(root, dir))
