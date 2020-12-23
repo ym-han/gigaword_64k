@@ -185,6 +185,8 @@ end
     @test acc_to_df(top2_loaded_to_test) == acc_to_df(nlargest(correct_final_acc, 2))
     @test top3_loaded_to_test == correct_final_acc
 
+    rm(path_test_data_reds, recursive=true, force=true)
+
 end
 
 

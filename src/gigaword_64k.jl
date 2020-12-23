@@ -217,12 +217,6 @@ function reduce_jdfs_and_save(input_path::String, output_path::String; ns_tuple 
     savejdf(joinpath(output_path, "final_df_$n2.jdf"), final_df_smaller)
 end    
 
-t = @_ final_to_test |> nlargest(__, 2) 
-
-for (k, v) in t
-    println(k)
-    println(v)
-end
 #=
 
 
