@@ -190,7 +190,7 @@ end
 
 "Reduces jdfs in `base` (or some subdir thereof) to a final acc"
 function reduce_jdfs(basepath::String)
-    jdf_paths = @lazy get_dir_paths(path_test_data_reds, ".jdf")
+    jdf_paths = @lazy get_dir_paths(basepath, ".jdf")
     final_acc = @_ lazymap(df_to_acc(jdf_to_df(_)), jdf_paths) |> 
                 lzfoldl(merge!(_1, _2) , __)
                 # need to use foldl if using merge! and not merge
