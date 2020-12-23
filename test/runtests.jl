@@ -16,6 +16,7 @@ const path_big_file = joinpath(path_test_data, "afp/afp_eng_200304")
 const path_test_output = joinpath(path_test_data, "test_output")
 
 
+
 # ===============
 # TESTS FOR UTILS
 # ===============
@@ -35,38 +36,44 @@ const path_test_output = joinpath(path_test_data, "test_output")
     @test is_wanted("") == true # but won't usually happen
 end
 
+@testset "lzfoldl" begin
+    @test lzfoldl((x,y)->x+y, list(1, 2, 3)) == 6
+
+    @test lzfoldl((x,y)->x-y, list(1, 2, 3)) == -4
+    # this is a good test case for foldl, since foldr would return -2
+end
 
 # ===================
 # TESTS FOR MAIN FTNS 
 # ===================
 
 
-@testset "df_from_acc" begin
+@testset "acc_to_df" begin
     # empty case
     mt_acc = counter(String)
-    df_from_mt_acc = df_from_acc(mt_acc)
+    df_from_mt_acc = acc_to_df(mt_acc)
     @test size(df_from_mt_acc) == (0, 2)
 
     # case with three entries
     acc_t = counter(String)
     acc_t["a"] = 1; acc_t["b"] = 2; acc_t["c"] = 7
-    df_at = df_from_acc(acc_t)
+    df_at = acc_to_df(acc_t)
 
     @test df_at[:word] == ["c", "b", "a"]
     @test df_at[:freq] == [7, 2, 1]
 end
 
-@testset "acc_from_df" begin
+@testset "df_to_acc" begin
     mt_acc = counter(String)
-    df_from_mt_acc = df_from_acc(mt_acc)
-    @test acc_from_df(df_from_mt_acc) == mt_acc
+    df_from_mt_acc = acc_to_df(mt_acc)
+    @test df_to_acc(df_from_mt_acc) == mt_acc
 
     # case with three entries
     acc_t = counter(String)
     acc_t["a"] = 1; acc_t["b"] = 2; acc_t["c"] = 7
-    df_at = df_from_acc(acc_t)
+    df_at = acc_to_df(acc_t)
 
-    @test acc_from_df(df_at) == acc_t
+    @test df_to_acc(df_at) == acc_t
 end
 
 
@@ -116,7 +123,7 @@ end
 
     jdf_cna_97_10 = @_ JDF.load(joinpath(path_tmp_test_output, 
         "cna_eng_199710.jdf")) |> DataFrame
-    acc_df_cna_97_10 = read_and_wc(joinpath(path_test_cna, "cna_eng_199710")) |> df_from_acc
+    acc_df_cna_97_10 = read_and_wc(joinpath(path_test_cna, "cna_eng_199710")) |> acc_to_df
 
     @test jdf_cna_97_10 == acc_df_cna_97_10 
 
@@ -133,9 +140,90 @@ end
     rm(path_tmp_test_output, recursive=true, force=true)
 end
 
+#    jdf_to_df(joinpath(path_test_data_reds, "a", "df1") * ".jdf")
+
+
+@testset "reduce_files" begin
+    # 1. Make the test data
+    path_test_data_reds = joinpath(path_test_data, "test_data_for_reductions")
+
+    a_1 = counter(String)
+    a_1["w1"] = 1; a_1["w2"] = 3
+    df_a1 = acc_to_df(a_1)
+
+    a_2 = counter(String)
+    a_2["w1"] = 1; a_2["w2"] = 2; a_2["w3"] = 7
+    df_a2 = acc_to_df(a_2)
+
+    a_3 = counter(String)
+    a_3["w1"] = 1
+    df_a3 = acc_to_df(a_3)
+
+    function dmapper(dirname)
+        for (i, df) in enumerate([df_a1, df_a2, df_a3])
+            fname = joinpath(path_test_data_reds, dirname, "df") * string(i) * ".jdf"
+            savejdf(fname, df) 
+        end
+    end
+    map(dmapper, ["a", "b", "c"])
+
+    # 2. Reduce the files
+
+
+    ## Testing reduce_jdfs
+    final_to_test = reduce_jdfs(path_test_data_reds)
+    correct_final_acc = counter(String)
+    correct_final_acc["w1"] = 9; correct_final_acc["w2"] = 15; correct_final_acc["w3"] = 21
+    @test final_to_test == correct_final_acc
+
+    ## Testing reduce_jdfs_and_save
+    reduce_jdfs_and_save(path_test_data_reds, path_test_data; ns_tuple = (2, 11))
+
+    top2_loaded_to_test = joinpath(path_test_data, "final_df_2.jdf") |> jdf_to_df |> df_to_acc
+    top3_loaded_to_test = joinpath(path_test_data, "final_df_3.jdf") |> jdf_to_df |> df_to_acc
+
+    @test acc_to_df(top2_loaded_to_test) == acc_to_df(nlargest(correct_final_acc, 2))
+    @test top3_loaded_to_test == correct_final_acc
+
+end
+
+
+
+    # dirnames = name.(dirs(testft))
+    # jdf_dirs = Set(filter(s->endswith(s, "jdf"), dirnames))
+    # jdf_tree = filter(x->name(x) ∈ jdf_dirs, testft, dirs=true)
+
+    # tree_of_dfs = FileTrees.load(testft[glob"*/*.jdf"], dirs = true) do dir   
+    #        @_ dir |> string(FileTrees.path(__)) |> JDF.load |> DataFrame
+    #     end
+
+    # 3. Test the reduction code
+    # function red_inner_dir(subtree)
+    #     reducevalues(subtree, init=nothing) do df1, df2
+    #         if df1 isa DataFrame && df2 isa DataFrame
+    #             @info "first branch"
+    #             (acc1, acc2) = df_to_acc.((df1, df2))
+    #             merge!(acc1, acc2)
+    #             @info acc1
+    #             return acc1
+
+    #         elseif df1 isa DataFrame && !isa(df2, DataFrame)
+    #             return df_to_acc(df1)
+
+    #         elseif !isa(df1, DataFrame) && isa(df2, DataFrame)
+    #             return df_to_acc(df2)
+
+    #         else
+    #             @info inputs to reducevalues were not dfs
+    #             return nothing
+    #         end
+    #     end
+    # # end
+    # reduced_subdirs = mapsubtrees(red_inner_dir, testft, glob"*") 
+
 
 #= 
-Note on that last test:
+Note on the many_files_dir test
 
 julia> many_files_dir[glob"*.jdf"]
 /gpfs/scratch/yh31/projects/gigaword_64k/test/test_data/test_output/tmp/

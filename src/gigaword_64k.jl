@@ -6,7 +6,8 @@ using FileTrees, Glob, DataStructures
 using Gumbo, WordTokenizers
 using AbstractTrees, Test
 using JDF, DataFrames
-using IterTools, StatsBase
+using IterTools, StatsBase, Lazy
+import Lazy: list, tail, first
 
 #export read_and_wc, process_part_of_tree
 
@@ -46,6 +47,39 @@ is_wanted(s::String) = length(s) >= 7 || all(isletter.(collect(s)))
 most_common(c::Accumulator) = most_common(c, length(c))
 most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k] 
 
+"Load JDF and get it into DataFrame form"
+jdf_to_df(jdf) = JDF.load(jdf) |> DataFrame
+
+"""
+String, String, String -> array
+
+Returns list of dirs that are in `base` or any of its subdirectories 
+"""
+function get_dir_paths(base::String, extension::String)
+    dirlist = []
+
+    for (root, dirs, files) in walkdir(path_test_data_reds)
+        for dir in dirs
+            if endswith(dir, "jdf")
+                push!(dirlist, joinpath(root, dir))
+            end
+        end
+    end
+
+    return dirlist
+end
+
+
+# need foldl because of how merge works
+
+@rec lzfoldl(f::Function, v, xs::List) = begin
+    isempty(xs) ? v : lzfoldl(f, f(v, first(xs)), tail(xs))
+end
+
+lzfoldl(f::Function, xs::List) = begin
+  isempty(xs) ? f() : lzfoldl(f, first(xs), tail(xs))
+end
+
 
 
 # ==================================
@@ -53,7 +87,9 @@ most_common(c::Accumulator, k) = sort(collect(c), by=kv->kv[2], rev=true)[1:k]
 # ==================================
 
 "Returns a df that consists of pairs in `acc`"
-function df_from_acc(acc :: Accumulator)
+function acc_to_df(acc)
+    # don't restrict this to accumulators, 
+    # because the result of nlargest on accumulators is not an accumulator
     df = DataFrame([String, Int], [:word, :freq])
 
     for (k, v) in acc
@@ -62,8 +98,9 @@ function df_from_acc(acc :: Accumulator)
     return df
 end
 
-"Converts a df (with same format as those produced by `df_from_acc`) to acc"
-function acc_from_df(df :: DataFrame)
+
+"Converts a df (with same format as those produced by `acc_to_df`) to acc"
+function df_to_acc(df :: DataFrame)
     acc = counter(String)
     map(eachrow(df)) do row acc[row.word] = row.freq end
 
@@ -136,7 +173,7 @@ function process_part_of_tree(path_of_tree :: String, path_output :: String, n_i
                        @_ file |>
                        string(FileTrees.path(__)) |> 
                        read_and_wc(__) |>
-                       df_from_acc(__)
+                       acc_to_df(__)
                   end
 
     out_tree = FileTrees.rename(loaded_tree, path_output)
@@ -150,6 +187,50 @@ end
 
 
 
+
+"Reduces jdfs in `base` (or some subdir thereof) to a final acc"
+function reduce_jdfs(basepath::String)
+    jdf_paths = @lazy get_dir_paths(path_test_data_reds, ".jdf")
+    final_acc = @_ lazymap(df_to_acc(jdf_to_df(_)), jdf_paths) |> 
+                lzfoldl(merge!(_1, _2) , __)
+                # need to use foldl if using merge! and not merge
+    return final_acc
+end
+
+```
+Reduces all the JDFs and saves two final JDFs, 
+one with the top 64k words and one with the top 70k words
+```
+function reduce_jdfs_and_save(input_path::String, output_path::String; ns_tuple = (70_000, 64_000))
+    final_acc = reduce_jdfs(input_path)
+    final_acc_len = length(final_acc)
+
+    n1 = min(ns_tuple[1], final_acc_len); n2 = min(ns_tuple[2], final_acc_len)
+
+    final_n1_acc = @_ final_acc |> nlargest(__, n1)
+    final_df_larger = final_n1_acc |> acc_to_df
+    savejdf(joinpath(output_path, "final_df_$n1.jdf"), final_df_larger)
+
+    final_df_smaller = @_ final_acc |> 
+                        nlargest(__, n2) |> 
+                        acc_to_df
+    savejdf(joinpath(output_path, "final_df_$n2.jdf"), final_df_smaller)
+end    
+
+t = @_ final_to_test |> nlargest(__, 2) 
+
+for (k, v) in t
+    println(k)
+    println(v)
+end
+#=
+
+
+function reduce_files()
+
+end
+
+
 counter_dfs = FileTree(path_of_tree)
 
 # trying to understand the tutorial...
@@ -160,6 +241,8 @@ testtree = maketree("dir"=>
 vcated = mapsubtrees(testtree, glob"*") do subtree
     reducevalues(vcat, subtree)
 end
+
+=#
 
 
 
